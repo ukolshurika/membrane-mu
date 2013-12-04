@@ -2,8 +2,13 @@
 
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <cassert>
+#include <algorithm> 
+
+#include "utils.h"
+#include "simpson.h"
 
 using namespace std;
 
@@ -23,11 +28,11 @@ double ValueAsLine(double time,
 
 
 void Kahan(double offset, const vector<pair<double, double>>& src, vector<pair<double, double>>* dst){
-  DCHECK(dst->empty());
-  for (auto& v : src)
-    DCHECK(!utils::IsNaN(v.first));
+  // DCHECK(dst->empty());
+  // for (auto& v : src)
+  //   DCHECK(!utils::IsNaN(v.first));
   // cerr << 'v' <<endl;
-  DCHECK(!utils::IsNaN(offset))
+  // DCHECK(!utils::IsNaN(offset))
   double s = offset, c = 0, t, y;
   cerr << " #### " << s << endl;
   for(auto j=src.begin(); j!=src.end(); j++){
@@ -61,7 +66,7 @@ struct Free {
   double n_;
 };
 
-Membrane::Membrane(double q, double h0, double n):q_(q), n_(n), h0_(h0) {
+Membrane::Membrane(double q, double h0, double n, double mu):q_(q), n_(n), h0_(h0), mu_(mu) {
   alpha1_ = 0.41; // from Maxima flexible step(boolshit just get it from terraud)
   alpha2_ = 0.93;//atan(2*Bound::kB/(Bound::kB2));//M_PI/2;
   h1_ = sin(alpha2_)/alpha2_*h0_;
@@ -91,39 +96,40 @@ void Membrane::free(int steps){
 }
 
 void Membrane::constrained(int steps){
-  
+  ofstream h_data("data/h.dat");
+  ofstream sigma_data ("data/s.dat");
+
   double init_sigma_k = q_/h1_; // Q*RHO/H (from free stadia)
-  double dt = 1;
+  double dt = 10000000;
 
   vector <double> sigma_k(steps, init_sigma_k), sigma_k1(steps, 0.0),
                   ds_k(steps, 0.0), ds_k1(steps, 0.0), 
                   delta_ds_k(steps, 0.0), delta_ds_k1(steps, 0.0),
-                  h_k(steps, h1_), h_k1(steps, 0.0);
+                  h_k(steps, 0.63), h_k1(steps, 0.0);
 
-  t_consrained_y_[t1_] = 0
-
-  for(auto t = 1; t < steps ; t+=1){
+  for(auto t = 1; t < steps ; ++t){
 
     for(auto i = 1; i < t; ++i)
-      delta_ds_k1[i] = pow((sigma_k[i-1]+sigma_k[i])/(4/sqrt(3)-(sigma_k[i-1]+sigma_k[i])), n_)*ds_k[i]*dt
-    
+      delta_ds_k1[i] = pow((sigma_k[i-1]+sigma_k[i])/(4/sqrt(3)-(sigma_k[i-1]+sigma_k[i])), n_)*ds_k[i]*dt;
+
     for(auto i = 0; i< t; ++i)
-      ds_k1[i] = ds_k[i] + delta_ds_k1[i]
+      ds_k1[i] = ds_k[i] + delta_ds_k1[i];
     
-    for(auto i = 0; i<t; ++i) 
-      h_k1[i] = h_k[i](1-pow(1/(1-sqrt(3)/2*q_/h_k[t-1])-1, n_));
+    for(auto i = 1; i<t; ++i) 
+      h_k1[i] = h_k[i]*(1-pow(1/(1-sqrt(3)/2*q_/h_k[t-1])-1, n_));
     
     /** WANING!!! THINK ABOUT HK+1K+1 !!!*/
 
-    sigma_k1[t] = q/h_k1[t]
+    sigma_k1[t] = sqrt(3)/2*q_/h_k1[t];
     for(auto i = t-1; i>0; --i)
-      sigma_k1[i] = sigma_k1[i+1]*h_k1[i+1]/h_k1[i]-mu_*ds_k1[i+1]*q_/h_k1[i]
+      sigma_k1[i] = sigma_k1[i+1]*h_k1[i+1]/h_k1[i]-mu_*ds_k1[i+1]*q_/h_k1[i];
     
-
-    ds_k1[t] = M_PI_2*pow(1/(1-sqrt(3)/2*q_/h_k[t-1])-1, n_)
+    cerr<<h_k[t-1]<< endl;
+    ds_k1[t] = M_PI_2*pow(1/(1-sqrt(3)/2*q_/h_k[t-1])-1, n_);
     
-    t_consrained_y_[t1_+t*dt] = ds_k1.sum();
-    
+    h_data << t_free_.back().first + t*dt << ' ' << exp(-2/M_PI*ds_k1[t]) << endl;
+    sigma_data << t_free_.back().first + t*dt << ' ' << sqrt(3)/2*q_/exp(-2/M_PI*ds_k1[t])<<endl;
+      
     /* --- SWAPPING --- */
     swap(sigma_k, sigma_k1);
     swap(ds_k, ds_k1);

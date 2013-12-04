@@ -5,11 +5,9 @@
 #include <utility>
 #include <string>
 
-#include "matrix.h"
-
 class Membrane{
   public:
-  Membrane(double q, double h0, double n);
+  Membrane(double q, double h0, double n, double mu);
 
   void free(int steps);
   void constrained(int steps);
@@ -39,6 +37,8 @@ class Membrane{
   double alpha1_;
   /*величина угла, при котором происходит касание*/
   double alpha2_;
+  double t1_;
+  double mu_;
 
   private:
   double MeanValueDt();

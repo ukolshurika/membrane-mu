@@ -3,8 +3,6 @@
 #include <cmath>
 
 #include "membrane.h"
-#include "bound.h"
-#include "gaus.h"
 
 using namespace std;
 
@@ -14,10 +12,10 @@ int main(){
   double q = 2.65*1000/88.3/1000000;
   double n = 3.4;
 
-  Membrane m(q, h0, n);
+  Membrane m(q, h0, n, 0.3);
 
   m.free(999);
-  m.constrained(999);
+  m.constrained(10);
 
   return 0;
 }
