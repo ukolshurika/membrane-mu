@@ -112,12 +112,25 @@ void Membrane::constrained(int steps){
     for(auto i = 1; i < t; ++i)
       delta_ds_k1[i] = pow((sigma_k[i-1]+sigma_k[i])/(4/sqrt(3)-(sigma_k[i-1]+sigma_k[i])), n_)*ds_k[i]*dt;
 
+
+    for(auto i = 0; i< steps; ++i)
+      cerr << delta_ds_k1[i] << ' ';
+    cerr << endl;
+
     for(auto i = 0; i< t; ++i)
       ds_k1[i] = ds_k[i] + delta_ds_k1[i];
     
+    for(auto i = 0; i< steps; ++i)
+      cerr << ds_k1[i] << ' ';
+    cerr << endl;
+
     for(auto i = 1; i<t; ++i) 
-      h_k1[i] = h_k[i]*(1-pow(1/(1-sqrt(3)/2*q_/h_k[t-1])-1, n_));
+      h_k1[i] = h_k[i]*(1-pow(1/(1-sqrt(3)/2*q_/h0_/h_k[t-1])-1, n_));
     
+    for(auto i = 0; i< steps; ++i)
+      cerr << h_k[i]-h_k[i]*pow(1/(1-sqrt(3)/2*q_/h0_/h_k[t-1])-1, n_)<< ' ';
+    cerr << endl;
+
     /** WANING!!! THINK ABOUT HK+1K+1 !!!*/
 
     sigma_k1[t] = sqrt(3)/2*q_/h_k1[t];
@@ -131,10 +144,10 @@ void Membrane::constrained(int steps){
     sigma_data << t_free_.back().first + t*dt << ' ' << sqrt(3)/2*q_/exp(-2/M_PI*ds_k1[t])<<endl;
       
     /* --- SWAPPING --- */
-    swap(sigma_k, sigma_k1);
-    swap(ds_k, ds_k1);
-    swap(delta_ds_k, delta_ds_k1);
-    swap(h_k, h_k1);
+    sigma_k.swap(sigma_k1);
+    ds_k.swap(ds_k1);
+    delta_ds_k.swap(delta_ds_k1);
+    h_k.swap(h_k1);
   }
 
 }
