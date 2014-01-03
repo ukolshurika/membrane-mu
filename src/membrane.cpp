@@ -100,7 +100,7 @@ void Membrane::constrained(int steps){
   ofstream sigma_data ("data/s.dat");
 
   double init_sigma_k = q_/h1_; // Q*RHO/H (from free stadia)
-  double dt = 10000000;
+  double dt = 1000000;
 
   vector <double> sigma_k(steps, init_sigma_k), sigma_k1(steps, 0.0),
                   ds_k(steps, 0.0), ds_k1(steps, 0.0), 
@@ -123,12 +123,12 @@ void Membrane::constrained(int steps){
     // for(auto i = 0; i< steps; ++i)
     //   cerr << ds_k1[i] << ' ';
     // cerr << endl;
-
+    cerr << h_k[t-1] << ' ' << t-1 <<endl ;
     for(auto i = 1; i<t; ++i) 
-      h_k1[i] = h_k[i]-h_k[i]*pow(1/(1-sqrt(3)/2*q_/h0_/h_k[t-1])-1, n_);
+      h_k1[i] = h_k[i]-h_k[i]*pow(1/(1-sqrt(3)/2*q_/h0_/h_k[t-1])-1, n_)*dt;
     
     for(auto i = 0; i< steps; ++i)
-      cerr << h_k[t-1]<< ' ';
+      cerr << h_k[i]-h_k[i]*pow(1/(1-sqrt(3)/2*q_/h0_/h_k[t-1])-1, n_)*dt << ' ';
     cerr << endl;
 
     /** WANING!!! THINK ABOUT HK+1K+1 !!!*/

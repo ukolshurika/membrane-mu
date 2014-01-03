@@ -15,7 +15,7 @@ int main(){
   Membrane m(q, h0, n, 0.3);
 
   m.free(999);
-  m.constrained(3);
+  m.constrained(10);
 
   return 0;
 }
