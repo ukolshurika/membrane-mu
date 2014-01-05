@@ -34,7 +34,7 @@ void Kahan(double offset, const vector<pair<double, double>>& src, vector<pair<d
   // cerr << 'v' <<endl;
   // DCHECK(!utils::IsNaN(offset))
   double s = offset, c = 0, t, y;
-  cerr << " #### " << s << endl;
+  // cerr << " #### " << s << endl;
   for(auto j=src.begin(); j!=src.end(); j++){
     y = j->first - c;
     t = s + y;
@@ -70,7 +70,7 @@ Membrane::Membrane(double q, double h0, double n, double mu):q_(q), n_(n), h0_(h
   alpha1_ = 0.41; // from Maxima flexible step(boolshit just get it from terraud)
   alpha2_ = 0.93;//atan(2*Bound::kB/(Bound::kB2));//M_PI/2;
   h1_ = sin(alpha2_)/alpha2_*h0_;
-  cerr << h1_ << ' ' << h1_/h0_ << endl;
+  // cerr << h1_ << ' ' << h1_/h0_ << endl;
 }
 
 void Membrane::free(int steps){
@@ -87,7 +87,7 @@ void Membrane::free(int steps){
 
   t_free_.clear();
   double offset = 0;
-  cerr << " ### "<< offset << endl;
+  // cerr << " ### "<< offset << endl;
   Kahan(offset, v, &t_free_);
   // for (auto it = v.begin(); it != v.end(); ++it) {
   //   t_free_.push_back(make_pair((it->first + offset), it->second));
@@ -108,46 +108,38 @@ void Membrane::constrained(int steps){
                   h_k(steps, 0.63), h_k1(steps, 0.0);
 
   for(auto t = 1; t < steps ; ++t){
+    cerr << t << endl;
 
     for(auto i = 1; i < t; ++i)
       delta_ds_k1[i] = pow((sigma_k[i-1]+sigma_k[i])/(4/sqrt(3)-(sigma_k[i-1]+sigma_k[i])), n_)*ds_k[i]*dt;
 
 
-    // for(auto i = 0; i< steps; ++i)
-    //   cerr << delta_ds_k1[i] << ' ';
-    // cerr << endl;
-
     for(auto i = 0; i< t; ++i)
       ds_k1[i] = ds_k[i] + delta_ds_k1[i];
-    
-    // for(auto i = 0; i< steps; ++i)
-    //   cerr << ds_k1[i] << ' ';
-    // cerr << endl;
-    cerr << h_k[t-1] << ' ' << t-1 <<endl ;
-    for(auto i = 1; i<t; ++i) 
+
+    for(auto i = 0; i<t; ++i) 
       h_k1[i] = h_k[i]-h_k[i]*pow(1/(1-sqrt(3)/2*q_/h0_/h_k[t-1])-1, n_)*dt;
     
-    for(auto i = 0; i< steps; ++i)
-      cerr << h_k[i]-h_k[i]*pow(1/(1-sqrt(3)/2*q_/h0_/h_k[t-1])-1, n_)*dt << ' ';
-    cerr << endl;
 
-    /** WANING!!! THINK ABOUT HK+1K+1 !!!*/
+    /** WARNING!!! THINK ABOUT HK+1K+1 !!!*/
+    h_k1[t]=h_k1[t-1];
 
     sigma_k1[t] = sqrt(3)/2*q_/h_k1[t];
     for(auto i = t-1; i>0; --i)
       sigma_k1[i] = sigma_k1[i+1]*h_k1[i+1]/h_k1[i]-mu_*ds_k1[i+1]*q_/h_k1[i];
     
-    cerr<<h_k[t-1]<< endl;
+
     ds_k1[t] = M_PI_2*pow(1/(1-sqrt(3)/2*q_/h_k[t-1])-1, n_);
     
-    h_data << t_free_.back().first + t*dt << ' ' << exp(-2/M_PI*ds_k1[t]) << endl;
+    h_data << t_free_.back().first + t*dt << ' ' << h_k1[t] << endl;
     sigma_data << t_free_.back().first + t*dt << ' ' << sqrt(3)/2*q_/exp(-2/M_PI*ds_k1[t])<<endl;
-      
+
     /* --- SWAPPING --- */
     sigma_k.swap(sigma_k1);
     ds_k.swap(ds_k1);
     delta_ds_k.swap(delta_ds_k1);
     h_k.swap(h_k1);
+
   }
 
 }
